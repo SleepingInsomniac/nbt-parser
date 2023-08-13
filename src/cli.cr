@@ -4,8 +4,9 @@ require "xml"
 
 require "./version"
 require "./tag"
-require "./parser"
+require "./reader"
 require "./writer"
+require "./xml_parser"
 
 struct Options
   property input : String?
@@ -45,12 +46,14 @@ nbt_data =
   case File.extname(file_path).downcase
   when ".dat", ".nbt"
     file = File.open(file_path, "rb")
-    root_tag = Compress::Gzip::Reader.open(file) { |gzip| Nbt::Parser.parse_tag(gzip) }
+    root_tag = Compress::Gzip::Reader.open(file) do |gzip|
+      Nbt::Reader.new(gzip).parse_tag
+    end
     file.close
     root_tag
   when ".xml"
     file = File.open(file_path, "r")
-    root_tag = Nbt::Parser.parse_xml(file)
+    root_tag = Nbt::XmlParser.new(file).parse
     file.close
     root_tag
   else
