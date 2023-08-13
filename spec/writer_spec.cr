@@ -1,6 +1,6 @@
 require "./spec_helper"
 
-require "../src/parser"
+require "../src/reader"
 require "../src/writer"
 require "../src/tag"
 
@@ -11,7 +11,7 @@ describe "Nbt" do
     Nbt::Writer.write(io, tag)
 
     io.rewind
-    new_tag = Nbt::Parser.parse_tag(io)
+    new_tag = Nbt::Reader.new(io).parse_tag
 
     new_tag.id.should eq(tag.id)
     new_tag.name.should eq(tag.name)
