@@ -6,49 +6,38 @@ module Nbt
     end
 
     def parse_tag
-      tag_id = Tag::Id.from_value(io.read_bytes(UInt8))
+      tag_id = parse_id
       name = tag_id.end? ? "" : read_string
-
-      list_id = tag_id.list? ? Tag::Id.new(io.read_bytes(UInt8)) : nil
-
+      list_id = tag_id.list? ? parse_id : nil
       payload = parse_payload(tag_id, list_id)
+
       Tag.new(tag_id, name, payload, list_id)
+    end
+
+    def parse_id
+      Tag::Id.from_value(io.read_bytes(UInt8))
     end
 
     def parse_payload(tag_id, list_id = nil)
       payload_value =
         case tag_id
-        when Tag::Id::End
-          nil
-        when Tag::Id::Byte
-          io.read_bytes(UInt8)
-        when Tag::Id::Short
-          io.read_bytes(Int16, format: IO::ByteFormat::BigEndian)
-        when Tag::Id::Int
-          io.read_bytes(Int32, format: IO::ByteFormat::BigEndian)
-        when Tag::Id::Long
-          io.read_bytes(Int64, format: IO::ByteFormat::BigEndian)
-        when Tag::Id::Float
-          io.read_bytes(Float32, format: IO::ByteFormat::BigEndian)
-        when Tag::Id::Double
-          io.read_bytes(Float64, format: IO::ByteFormat::BigEndian)
+        when Tag::Id::End    then nil
+        when Tag::Id::Byte   then io.read_bytes(UInt8)
+        when Tag::Id::Short  then io.read_bytes(Int16, format: IO::ByteFormat::BigEndian)
+        when Tag::Id::Int    then io.read_bytes(Int32, format: IO::ByteFormat::BigEndian)
+        when Tag::Id::Long   then io.read_bytes(Int64, format: IO::ByteFormat::BigEndian)
+        when Tag::Id::Float  then io.read_bytes(Float32, format: IO::ByteFormat::BigEndian)
+        when Tag::Id::Double then io.read_bytes(Float64, format: IO::ByteFormat::BigEndian)
         when Tag::Id::ByteArray
           size = io.read_bytes(UInt8)
-          array = Array(UInt8).new(size)
-          size.times do
-            array << io.read_bytes(UInt8)
-          end
-          array
-        when Tag::Id::String
-          read_string
+          Array(UInt8).new(size) { io.read_bytes(UInt8) }
+        when Tag::Id::String then read_string
         when Tag::Id::List
-          list_size = io.read_bytes(Int32, format: IO::ByteFormat::BigEndian)
-          tags = Array(Tag).new(list_size)
-          list_size.times do
+          size = io.read_bytes(Int32, format: IO::ByteFormat::BigEndian)
+          tags = Array(Tag).new(size) do
             payload = parse_payload(list_id.not_nil!)
-            tags << Tag.new(list_id.not_nil!, "", payload)
+            Tag.new(list_id.not_nil!, "", payload)
           end
-          tags
         when Tag::Id::Compound
           tags = Array(Tag).new
           loop do
@@ -59,18 +48,10 @@ module Nbt
           tags
         when Tag::Id::IntArray
           size = io.read_bytes(Int32, format: IO::ByteFormat::BigEndian)
-          array = Array(Int32).new(size)
-          size.times do
-            array << io.read_bytes(Int32, format: IO::ByteFormat::BigEndian)
-          end
-          array
+          Array(Int32).new(size) { io.read_bytes(Int32, format: IO::ByteFormat::BigEndian) }
         when Tag::Id::LongArray
           size = io.read_bytes(Int32, format: IO::ByteFormat::BigEndian)
-          array = Array(Int64).new(size)
-          size.times do
-            array << io.read_bytes(Int64, format: IO::ByteFormat::BigEndian)
-          end
-          array
+          Array(Int64).new(size) { io.read_bytes(Int64, format: IO::ByteFormat::BigEndian) }
         else
           STDERR.puts "Error: Unknown tag id #{tag_id.value}"
           exit(1)
