@@ -4,7 +4,7 @@ require "../src/reader"
 require "../src/writer"
 require "../src/tag"
 
-describe "Nbt" do
+describe Nbt::Writer do
   it "Reads and writes correctly" do
     io = IO::Memory.new
     tag = Nbt::Tag.new(Nbt::Tag::Id::String, "TestString", "TestString Value")

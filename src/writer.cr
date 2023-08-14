@@ -31,7 +31,7 @@ module Nbt
       # Write size
       case tag.id
       when Tag::Id::ByteArray
-        io.write_bytes(tag.payload.as(Array(UInt8)).size.to_u8, IO::ByteFormat::BigEndian)
+        io.write_bytes(tag.payload.as(Array(UInt8)).size.to_i32, IO::ByteFormat::BigEndian)
       when Tag::Id::String
         io.write_bytes(tag.payload.as(String).bytesize.to_u16, IO::ByteFormat::BigEndian)
       when Tag::Id::List
