@@ -8,17 +8,16 @@ module Nbt
     def parse_tag
       tag_id = parse_id
       name = tag_id.end? ? "" : read_string
-      list_id = tag_id.list? ? parse_id : nil
-      payload = parse_payload(tag_id, list_id)
+      payload = parse_payload(tag_id)
 
-      Tag.new(tag_id, name, payload, list_id)
+      Tag.new(tag_id, name, payload)
     end
 
     def parse_id
       Tag::Id.from_value(io.read_bytes(UInt8))
     end
 
-    def parse_payload(tag_id, list_id = nil)
+    def parse_payload(tag_id)
       case tag_id
       when Tag::Id::End       then nil
       when Tag::Id::Byte      then io.read_bytes(UInt8)
@@ -30,9 +29,10 @@ module Nbt
       when Tag::Id::ByteArray then Array(UInt8).new(array_size) { io.read_bytes(UInt8) }
       when Tag::Id::String    then read_string
       when Tag::Id::List
+        list_id = parse_id
         size = io.read_bytes(Int32, format: IO::ByteFormat::BigEndian)
         tags = Array(Tag).new(size) do
-          payload = parse_payload(list_id.not_nil!)
+          payload = parse_payload(list_id)
           Tag.new(list_id.not_nil!, "", payload)
         end
       when Tag::Id::Compound

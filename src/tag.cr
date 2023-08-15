@@ -18,10 +18,19 @@ module Nbt
 
     getter id : Id
     property name : String
-    getter list_id : Id?
     property payload : Array(Int32) | Array(Int64) | Array(Nbt::Tag) | Array(UInt8) | Float32 | Float64 | Int16 | Int32 | Int64 | String | UInt8 | Nil
 
-    def initialize(@id, @name, @payload, @list_id = nil)
+    def initialize(@id, @name, @payload)
+    end
+
+    def list_id : Id?
+      return nil unless @id.list?
+
+      if child = @payload.as(Array(Nbt::Tag))[0]?
+        child.id
+      else
+        Id::End
+      end
     end
   end
 end

@@ -53,7 +53,7 @@ module Nbt
                   STDERR.puts "Error: Unknown tag id #{tag_id.value}"
                 end
 
-      Tag.new(tag_id, tag_name, payload, list_id)
+      Tag.new(tag_id, tag_name, payload)
     end
   end
 end
