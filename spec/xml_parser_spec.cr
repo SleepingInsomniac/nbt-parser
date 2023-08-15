@@ -14,4 +14,22 @@ describe Nbt::XmlParser do
     tag = Nbt::XmlParser.new(xml).parse
     tag.payload.as(Array(Int32))[2].should eq(-1460469762)
   end
+
+  it "Parses list tags" do
+    xml = <<-XML
+      <List type="List">
+        <List type="String">
+          <String value="AAAAA">
+        </List>
+      </List
+    XML
+
+    tag = Nbt::XmlParser.new(xml).parse
+
+    tag.payload.as(Array(Nbt::Tag)).first.should be_a(Nbt::Tag)
+
+    tag.payload.as(Array(Nbt::Tag))
+      .first.payload.as(Array(Nbt::Tag))
+      .first.payload.should eq("AAAAA")
+  end
 end
