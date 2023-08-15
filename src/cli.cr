@@ -8,10 +8,20 @@ require "./reader"
 require "./writer"
 require "./xml_parser"
 
+# Check the first 2 bytes for the gzip signature
+#
+def gzipped?(io : IO) : Bool
+  signature_bytes = Bytes.new(2)
+  io.read_fully(signature_bytes)
+  io.rewind
+  signature_bytes[0] == 0x1F_u8 && signature_bytes[1] == 0x8B_u8
+end
+
 struct Options
   property input : String?
   property output : String?
   property format : String?
+  property uncompress : Bool?
 end
 
 options = Options.new
@@ -24,6 +34,7 @@ OptionParser.parse do |parser|
   parser.on("-i", "--input=PATH", "Path to an nbt file") { |path| options.input = path }
   parser.on("-o", "--output=PATH", "Output path") { |path| options.output = path }
   parser.on("-f", "--format=FORMAT", "xml,{dat,nbt}") { |format| options.format = format.downcase }
+  parser.on("--no-uncompress", "Skip GZIP decompression") { options.uncompress = false }
 end
 
 # Validations
@@ -46,9 +57,23 @@ nbt_data =
   case File.extname(file_path).downcase
   when ".dat", ".nbt"
     file = File.open(file_path, "rb")
-    root_tag = Compress::Gzip::Reader.open(file) do |gzip|
-      Nbt::Reader.new(gzip).parse_tag
-    end
+
+    uncompress =
+      if options.uncompress.nil?
+        gzipped?(file)
+      else
+        options.uncompress.not_nil!
+      end
+
+    root_tag =
+      if uncompress
+        Compress::Gzip::Reader.open(file) do |gzip|
+          Nbt::Reader.new(gzip).parse_tag
+        end
+      else
+        Nbt::Reader.new(file).parse_tag
+      end
+
     file.close
     root_tag
   when ".xml"
