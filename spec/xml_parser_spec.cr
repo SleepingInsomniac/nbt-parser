@@ -32,4 +32,15 @@ describe Nbt::XmlParser do
       .first.payload.as(Array(Nbt::Tag))
       .first.payload.should eq("AAAAA")
   end
+
+  it "Parses longs" do
+    xml = <<-XML
+      <Long name="long" value="1234"/>
+    XML
+
+    tag = Nbt::XmlParser.new(xml).parse
+
+    tag.name.should eq("long")
+    tag.payload.should eq(1234_i64)
+  end
 end

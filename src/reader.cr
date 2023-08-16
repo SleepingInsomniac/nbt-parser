@@ -20,13 +20,13 @@ module Nbt
     def parse_payload(tag_id)
       case tag_id
       when Tag::Id::End       then nil
-      when Tag::Id::Byte      then io.read_bytes(UInt8)
+      when Tag::Id::Byte      then io.read_bytes(Int8)
       when Tag::Id::Short     then io.read_bytes(Int16, format: IO::ByteFormat::BigEndian)
       when Tag::Id::Int       then io.read_bytes(Int32, format: IO::ByteFormat::BigEndian)
       when Tag::Id::Long      then io.read_bytes(Int64, format: IO::ByteFormat::BigEndian)
       when Tag::Id::Float     then io.read_bytes(Float32, format: IO::ByteFormat::BigEndian)
       when Tag::Id::Double    then io.read_bytes(Float64, format: IO::ByteFormat::BigEndian)
-      when Tag::Id::ByteArray then Array(UInt8).new(array_size) { io.read_bytes(UInt8) }
+      when Tag::Id::ByteArray then Array(Int8).new(array_size) { io.read_bytes(Int8) }
       when Tag::Id::String    then read_string
       when Tag::Id::List
         list_id = parse_id

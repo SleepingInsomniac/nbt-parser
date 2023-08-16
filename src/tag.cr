@@ -18,7 +18,7 @@ module Nbt
 
     getter id : Id
     property name : String
-    property payload : Array(Int32) | Array(Int64) | Array(Nbt::Tag) | Array(UInt8) | Float32 | Float64 | Int16 | Int32 | Int64 | String | UInt8 | Nil
+    property payload : Nil | String | Int8 | Int16 | Int32 | Int64 | Float32 | Float64 | Array(Int8) | Array(Int32) | Array(Int64) | Array(Nbt::Tag)
 
     def initialize(@id, @name, @payload)
     end

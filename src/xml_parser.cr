@@ -26,7 +26,7 @@ module Nbt
 
       payload = case tag_id
                 when Tag::Id::Byte
-                  node["value"].to_u8
+                  node["value"].to_i8
                 when Tag::Id::Short
                   node["value"].to_i16
                 when Tag::Id::Int
@@ -38,7 +38,7 @@ module Nbt
                 when Tag::Id::Double
                   node["value"].to_f64
                 when Tag::Id::ByteArray
-                  node["value"].split(/[^\d\-]+/).reject(&.blank?).map(&.to_u8)
+                  nums = node.children.select(&.element?).map { |child| child["value"].to_i8 }
                 when Tag::Id::String
                   node["value"]
                 when Tag::Id::List, Tag::Id::Compound
@@ -46,9 +46,9 @@ module Nbt
                     parse_xml_tag(child)
                   end
                 when Tag::Id::IntArray
-                  nums = node["value"].split(/[^\d\-]+/).reject(&.blank?).map(&.to_i32)
+                  nums = node.children.select(&.element?).map { |child| child["value"].to_i32 }
                 when Tag::Id::LongArray
-                  node["value"].split(/[^\d\-]+/).reject(&.blank?).map(&.to_i64)
+                  nums = node.children.select(&.element?).map { |child| child["value"].to_i64 }
                 else
                   STDERR.puts "Error: Unknown tag id #{tag_id.value}"
                 end

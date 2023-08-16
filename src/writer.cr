@@ -31,7 +31,7 @@ module Nbt
       # Write size
       case tag.id
       when Tag::Id::ByteArray
-        io.write_bytes(tag.payload.as(Array(UInt8)).size.to_i32, IO::ByteFormat::BigEndian)
+        io.write_bytes(tag.payload.as(Array(Int8)).size.to_i32, IO::ByteFormat::BigEndian)
       when Tag::Id::String
         io.write_bytes(tag.payload.as(String).bytesize.to_u16, IO::ByteFormat::BigEndian)
       when Tag::Id::List
@@ -45,7 +45,7 @@ module Nbt
       # Write payload
       case tag.id
       when Tag::Id::Byte
-        io.write_bytes(tag.payload.as(UInt8))
+        io.write_bytes(tag.payload.as(Int8))
       when Tag::Id::Short
         io.write_bytes(tag.payload.as(Int16), IO::ByteFormat::BigEndian)
       when Tag::Id::Int
@@ -57,7 +57,7 @@ module Nbt
       when Tag::Id::Double
         io.write_bytes(tag.payload.as(Float64), IO::ByteFormat::BigEndian)
       when Tag::Id::ByteArray
-        tag.payload.as(Array(UInt8)).each do |byte|
+        tag.payload.as(Array(Int8)).each do |byte|
           io.write_bytes(byte)
         end
       when Tag::Id::String
@@ -82,7 +82,7 @@ module Nbt
       end
     end
 
-    def self.write_xml(tag : Nbt::Tag, xml : XML::Builder, depth = 0, indent = 2)
+    def self.write_xml(tag : Nbt::Tag, xml : XML::Builder)
       payload = tag.payload
 
       case payload
@@ -92,12 +92,27 @@ module Nbt
           xml.attribute("type", tag.list_id) if tag.id.list?
 
           payload.each do |child|
-            write_xml(child, xml, depth + indent)
+            write_xml(child, xml)
+          end
+        end
+      when Array(Int8), Array(Int32), Array(Int64)
+        xml.element(tag.id.to_s) do
+          xml.attribute("name", tag.name) unless tag.name.blank?
+
+          payload.each do |child|
+            case child
+            when Int8  then xml.element(Tag::Id::Byte.to_s, value: child)
+            when Int32 then xml.element(Tag::Id::Int.to_s, value: child)
+            when Int64 then xml.element(Tag::Id::Long.to_s, value: child)
+            else
+              raise "Array with wrong type!"
+            end
           end
         end
       else
-        xml.element(tag.id.to_s, value: tag.payload) do
+        xml.element(tag.id.to_s) do
           xml.attribute("name", tag.name) unless tag.name.blank?
+          xml.attribute("value", tag.payload)
         end
       end
     end

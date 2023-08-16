@@ -5,6 +5,22 @@ require "./tag"
 
 module Nbt
   class Region
+    # Returns the coords for a given region by player postion
+    def self.coords(player_x : Float32 | Float64, player_z : Float32 | Float64)
+      x = player_x.floor.to_i
+      z = player_z.floor.to_i
+      {
+        region: {
+          x: (x >> 9),
+          z: (z >> 9),
+        },
+        chunk: {
+          x: ((x >> 4) & 31),
+          z: ((z >> 4) & 31),
+        },
+      }
+    end
+
     # A region file has 1024 entries of 4 bytes followed by 1024 entries for 4 byte timestamps
     struct Header
       ENTRIES   = 1024
