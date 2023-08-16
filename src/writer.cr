@@ -11,11 +11,6 @@ module Nbt
       io.write_bytes(tag.name.bytesize.to_u16, IO::ByteFormat::BigEndian)
       io.write(tag.name.to_slice)
 
-      # Write list_id
-      if tag.id.list?
-        io.write_bytes(tag.list_id.not_nil!.value, IO::ByteFormat::BigEndian)
-      end
-
       write_payload(io, tag)
     rescue e
       STDERR.puts "Unable to write tag:"
@@ -28,6 +23,11 @@ module Nbt
     end
 
     def self.write_payload(io : IO, tag : Tag)
+      # Write list_id
+      if tag.id.list?
+        io.write_bytes(tag.list_id.not_nil!.value, IO::ByteFormat::BigEndian)
+      end
+
       # Write size
       case tag.id
       when Tag::Id::ByteArray
