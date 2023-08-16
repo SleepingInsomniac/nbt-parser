@@ -1,5 +1,6 @@
 require "option_parser"
 require "compress/gzip"
+require "compress/zlib"
 require "xml"
 
 require "./version"
@@ -7,6 +8,7 @@ require "./tag"
 require "./reader"
 require "./writer"
 require "./xml_parser"
+require "./region"
 
 # Check the first 2 bytes for the gzip signature
 #
@@ -22,6 +24,7 @@ struct Options
   property output : String?
   property format : String?
   property uncompress : Bool?
+  property chunk : String?
 end
 
 options = Options.new
@@ -35,6 +38,7 @@ OptionParser.parse do |parser|
   parser.on("-o", "--output=PATH", "Output path") { |path| options.output = path }
   parser.on("-f", "--format=FORMAT", "xml,{dat,nbt}") { |format| options.format = format.downcase }
   parser.on("--no-uncompress", "Skip GZIP decompression") { options.uncompress = false }
+  parser.on("--chunk=CHUNK", "specify chunk for region files: x,z") { |chunk| options.chunk = chunk }
 end
 
 # Validations
@@ -76,6 +80,25 @@ nbt_data =
 
     file.close
     root_tag
+  when ".mca", ".mcr"
+    x = 0
+    z = 0
+
+    if options.chunk
+      chunk_nums = options.chunk.not_nil!.split(/\D+/).map(&.to_i)
+      x = chunk_nums[0]
+      z = chunk_nums[1]
+    end
+
+    file = File.open(file_path, "rb")
+    region = Nbt::Region.new(file)
+
+    if root_tag = region.read_chunk(x, z)
+      root_tag
+    else
+      STDERR.puts "Chunk(#{x}, #{z}) is nil"
+      exit(2)
+    end
   when ".xml"
     file = File.open(file_path, "r")
     root_tag = Nbt::XmlParser.new(file).parse
@@ -103,11 +126,6 @@ output_io =
       File.open(output_path, "wb")
     end
   else
-    # unless options.format == "xml"
-    #   STDERR.puts "Unable to output to stdout with binary format, use -o"
-    #   exit(1)
-    # end
-
     STDOUT
   end
 
@@ -120,7 +138,7 @@ when "xml"
   output_io.puts(xml)
 when "dat", "nbt"
   Compress::Gzip::Writer.open(output_io) do |gzip|
-    Nbt::Writer.write(gzip, root_tag)
+    Nbt::Writer.write(gzip, nbt_data)
   end
 end
 
