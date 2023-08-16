@@ -8,7 +8,12 @@ require "../src/xml_parser"
 describe Nbt::XmlParser do
   it "Parses negative values from int array" do
     xml = <<-XML
-      <IntArray value="[447537198, 103891500, -1460469762, -1640371231]" name="WanderingTraderId"/>
+      <IntArray name="WanderingTraderId">
+        <Int value="447537198"/>
+        <Int value="103891500"/>
+        <Int value="-1460469762"/>
+        <Int value="-1640371231"/>
+      </IntArray>
     XML
 
     tag = Nbt::XmlParser.new(xml).parse
