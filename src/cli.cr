@@ -24,6 +24,7 @@ struct Options
   property output : String?
   property format : String?
   property uncompress : Bool?
+  property compress : Bool = true
   property chunk : String?
 end
 
@@ -37,7 +38,8 @@ OptionParser.parse do |parser|
   parser.on("-i", "--input=PATH", "Path to an nbt file") { |path| options.input = path }
   parser.on("-o", "--output=PATH", "Output path") { |path| options.output = path }
   parser.on("-f", "--format=FORMAT", "xml,{dat,nbt}") { |format| options.format = format.downcase }
-  parser.on("--no-uncompress", "Skip GZIP decompression") { options.uncompress = false }
+  parser.on("--no-uncompress", "Skip decompression (for input)") { options.uncompress = false }
+  parser.on("--no-compress", "Skip compression (for output)") { options.compress = false }
   parser.on("--chunk=CHUNK", "specify chunk for region files: x,z") { |chunk| options.chunk = chunk }
 end
 
@@ -115,7 +117,12 @@ nbt_data =
 if output_path = options.output
   options.format ||= File.extname(output_path).downcase[1..]
 else
-  options.format ||= "xml"
+  options.format ||=
+    case File.extname(file_path).downcase[1..]
+    when "xml" then "dat"
+    when "dat" then "xml"
+    else            "xml"
+    end
 end
 
 output_io =
@@ -137,8 +144,12 @@ when "xml"
 
   output_io.puts(xml)
 when "dat", "nbt"
-  Compress::Gzip::Writer.open(output_io) do |gzip|
-    Nbt::Writer.write(gzip, nbt_data)
+  if options.compress
+    Compress::Gzip::Writer.open(output_io) do |gzip|
+      Nbt::Writer.write(gzip, nbt_data)
+    end
+  else
+    Nbt::Writer.write(output_io, nbt_data)
   end
 end
 
