@@ -40,7 +40,21 @@ OptionParser.parse do |parser|
   parser.on("-f", "--format=FORMAT", "xml,{dat,nbt}") { |format| options.format = format.downcase }
   parser.on("--no-uncompress", "Skip decompression (for input)") { options.uncompress = false }
   parser.on("--no-compress", "Skip compression (for output)") { options.compress = false }
-  parser.on("--chunk=CHUNK", "specify chunk for region files: x,z") { |chunk| options.chunk = chunk }
+  parser.on("--chunk=CHUNK", "Specify chunk for region files: x,z") { |chunk| options.chunk = chunk }
+
+  parser.on("--region-for=POS", "Get the region for an x,z position") do |pos|
+    x, z = pos.split(',').map(&.to_f64)
+    coords = Nbt::Region.region_coords(x, z)
+    puts String.build { |s| s << coords[:x] << "," << coords[:z] }
+    exit(0)
+  end
+
+  parser.on("--chunk-for=POS", "Specify chunk by player position") do |pos|
+    x, z = pos.split(',').map(&.to_f64)
+    coords = Nbt::Region.chunk_coords(x, z)
+    puts String.build { |s| s << coords[:x] << "," << coords[:z] }
+    exit(0)
+  end
 end
 
 # Validations
