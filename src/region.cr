@@ -5,18 +5,27 @@ require "./tag"
 
 module Nbt
   class Region
+    CHUNK_SIZE = 16 # blocks
+    SIZE       = 32 # chunks
+
     def self.region_coords(x : Float64, z : Float64)
-      {x: (x.to_i >> 9), z: (z.to_i >> 9)}
+      {
+        x: (x / (CHUNK_SIZE * SIZE)).floor,
+        z: (z / (CHUNK_SIZE * SIZE)).floor,
+      }
     end
 
     def self.chunk_coords(x : Float64, z : Float64)
-      {x: ((x.to_i >> 4) & 31), z: ((z.to_i >> 4) & 31)}
+      {
+        x: (x / CHUNK_SIZE).to_i % SIZE,
+        z: (z / CHUNK_SIZE).to_i % SIZE,
+      }
     end
 
     # A region file has 1024 entries of 4 bytes followed by 1024 entries for 4 byte timestamps
     struct Header
-      ENTRIES   = 1024
-      BYTE_SIZE =    4
+      ENTRIES   = 1024 # Number of entries in the header
+      BYTE_SIZE =    4 # Size of an entry in bytes
 
       getter x : Int32
       getter z : Int32
@@ -44,7 +53,8 @@ module Nbt
     end
 
     def timestamp(x : Int32, z : Int32)
-      @io.seek(header_offset(x, z) + (1024 * 4))
+      header = Header.new(x, z)
+      @io.seek(header.timestamp_offset)
       @io.read_bytes(UInt32, IO::ByteFormat::BigEndian)
     end
 

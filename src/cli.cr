@@ -26,6 +26,7 @@ struct Options
   property uncompress : Bool?
   property compress : Bool = true
   property chunk : String?
+  property show_timetamp : NamedTuple(x: Int32, z: Int32)?
 end
 
 options = Options.new
@@ -41,6 +42,11 @@ OptionParser.parse do |parser|
   parser.on("--no-uncompress", "Skip decompression (for input)") { options.uncompress = false }
   parser.on("--no-compress", "Skip compression (for output)") { options.compress = false }
   parser.on("--chunk=CHUNK", "Specify chunk for region files: x,z") { |chunk| options.chunk = chunk }
+  parser.on("--chunk-timestamp=POS", "Timestamp for a chunk (x,z)") do |pos|
+    x, z = pos.split(',').map(&.to_f64)
+    coords = Nbt::Region.chunk_coords(x, z)
+    options.show_timetamp = coords
+  end
 
   parser.on("--region-for=POS", "Get the region for an x,z position") do |pos|
     x, z = pos.split(',').map(&.to_f64)
@@ -68,6 +74,20 @@ end
 unless File.exists?(file_path)
   STDERR.puts "Input file does not exist"
   exit(1)
+end
+
+if coords = options.show_timetamp
+  File.open(file_path, "rb") do |file|
+    timestamp = Nbt::Region.new(file).timestamp(coords[:x], coords[:z])
+    if timestamp == 0
+      puts "not yet modified"
+      exit(0)
+    end
+
+    puts Time.unix(timestamp)
+  end
+
+  exit(0)
 end
 
 # Reading
