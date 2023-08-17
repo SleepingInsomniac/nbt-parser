@@ -61,7 +61,7 @@ module Nbt
     def read_string
       size = io.read_bytes(UInt16, format: IO::ByteFormat::BigEndian)
       buffer = Bytes.new(size)
-      io.read_utf8(buffer)
+      io.read_fully(buffer)
       String.new(buffer)
     end
   end
