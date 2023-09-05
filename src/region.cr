@@ -98,6 +98,8 @@ module Nbt
         else
           raise "Unknown compression type for chunk"
         end
+    rescue e : IO::EOFError
+      nil
     end
   end
 end
