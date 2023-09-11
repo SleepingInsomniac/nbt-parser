@@ -1,0 +1,115 @@
+<html lang="en">
+  <head>
+    <title>Map of {{ world_name }}</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+
+      html, body {
+        padding: none;
+        margin: none;
+        font-family: helvetica, sans-serif;
+        color: white;
+        text-shadow: 1px 1px 1px #000;
+      }
+
+      body {
+        background-color: #000;
+      }
+
+      ul {
+        list-style-type: none;
+        margin: 0;
+        padding: 0;
+      }
+
+      #images {
+        display: grid;
+        grid-template-columns: 512px;
+        grid-template-rows: 512px;
+        gap: 0;
+      }
+
+      .image {
+        position: relative;
+        width: 512px;
+        height: 512px;
+        background-size: cover;
+        background-repeat: no-repeat;
+        background-color: #444;
+      }
+
+      .info {
+        opacity: 0;
+        padding: 12pt;
+      }
+
+      .location {
+        font-weight: normal;
+        font-size: 12pt;
+        margin-bottom: 10px;
+      }
+
+      .biomes {
+        opacity: 0.5;
+      }
+
+      .border {
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        border: 1px solid #fff;
+        opacity: 0;
+      }
+
+      .image:hover .info {
+        opacity: 1;
+      }
+
+      .image:hover .border {
+        opacity: 0.5;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="images">
+      {{#regions}}
+      <div class="image" style="background-image: url('r.{{x}}.{{z}}.png')" data-x="{{x}}" data-z="{{z}}">
+        <div class="border"></div>
+        <div class="info">
+          <div class="location">{{x}},{{z}}</div>
+          <ul class="biomes">
+            {{#biomes}}
+            <li>{{.}}</li>
+            {{/biomes}}
+          </ul>
+        </div>
+      </div>
+      {{/regions}}
+    </div>
+
+    <script>
+      const imagesContainer = document.querySelector('#images');
+      const images = Array.from(imagesContainer.querySelectorAll('div'));
+
+      let xs = images.map(img => +img.getAttribute('data-x'));
+      let zs = images.map(img => +img.getAttribute('data-z'));
+
+      let minX = Math.min(...xs);
+      let minZ = Math.min(...zs);
+      let maxX = Math.max(...xs);
+      let maxZ = Math.max(...zs);
+
+      images.forEach(img => {
+        const x = img.getAttribute('data-x') - minX + 1;
+        const z = img.getAttribute('data-z') - minZ + 1;
+
+        img.style.gridColumnStart = x;
+        img.style.gridRowStart = z;
+      });
+    </script>
+  </body>
+</html>

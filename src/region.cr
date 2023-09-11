@@ -30,20 +30,15 @@ module Nbt
       getter x : Int32
       getter z : Int32
 
-      @offset : Int32? = nil
-
-      def initialize(@x, @z)
-      end
-
       # returns the heander entry offset for a chunk at *x* and *z* coordinates.
-      def offset
-        @offset ||= BYTE_SIZE * ((@x & 31) + (@z & 31) * 32)
-        @offset.not_nil!
-      end
+      getter offset : Int32
 
       # The timestamps are listed in the second part of the header
-      def timestamp_offset
-        offset + (ENTRIES * BYTE_SIZE)
+      getter timestamp_offset : Int32
+
+      def initialize(@x, @z)
+        @offset = BYTE_SIZE * ((@x & 31) + (@z & 31) * 32)
+        @timestamp_offset = @offset + (ENTRIES * BYTE_SIZE)
       end
     end
 
@@ -56,6 +51,25 @@ module Nbt
       header = Header.new(x, z)
       @io.seek(header.timestamp_offset)
       @io.read_bytes(UInt32, IO::ByteFormat::BigEndian)
+    end
+
+    def any_chunks?
+      @io.rewind
+
+      (0..Header::ENTRIES).any? do
+        entry = @io.read_bytes(UInt32, IO::ByteFormat::BigEndian)
+        (entry >> 8) != 0 && (entry & 0xFF) != 0
+      end
+    end
+
+    def no_chunks?
+      !any_chunks?
+    end
+
+    def chunk?(x : Int32, z : Int32)
+      header = Header.new(x, z)
+      @io.seek(header.offset)
+      @io.read_bytes(UInt32, IO::ByteFormat::BigEndian).zero?
     end
 
     # Parameters:

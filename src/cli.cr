@@ -26,13 +26,13 @@ struct Options
   property uncompress : Bool?
   property compress : Bool = true
   property chunk : String?
-  property show_timetamp : NamedTuple(x: Int32, z: Int32)?
+  property show_timestamp : NamedTuple(x: Int32, z: Int32)?
 end
 
 options = Options.new
 
 OptionParser.parse do |parser|
-  parser.banner = "Usage: nbt -f <path> [options]"
+  parser.banner = "Usage: nbt -i <path> [options]"
 
   parser.on("-v", "--version", "Show version") { puts Nbt::VERSION; exit }
   parser.on("-h", "--help", "Show help") { puts parser; exit }
@@ -45,7 +45,7 @@ OptionParser.parse do |parser|
   parser.on("--chunk-timestamp=POS", "Timestamp for a chunk (x,z)") do |pos|
     x, z = pos.split(',').map(&.to_f64)
     coords = Nbt::Region.chunk_coords(x, z)
-    options.show_timetamp = coords
+    options.show_timestamp = coords
   end
 
   parser.on("--region-for=POS", "Get the region for an x,z position") do |pos|
@@ -76,9 +76,10 @@ unless File.exists?(file_path)
   exit(1)
 end
 
-if coords = options.show_timetamp
+if coords = options.show_timestamp
   File.open(file_path, "rb") do |file|
     timestamp = Nbt::Region.new(file).timestamp(coords[:x], coords[:z])
+
     if timestamp == 0
       puts "not yet modified"
       exit(0)
@@ -117,23 +118,23 @@ nbt_data =
     file.close
     root_tag
   when ".mca", ".mcr"
-    x = 0
-    z = 0
-
-    if options.chunk
-      chunk_nums = options.chunk.not_nil!.split(/\D+/).map(&.to_i)
-      x = chunk_nums[0]
-      z = chunk_nums[1]
-    end
-
     file = File.open(file_path, "rb")
     region = Nbt::Region.new(file)
 
-    if root_tag = region.read_chunk(x, z)
-      root_tag
+    if options.chunk
+      chunk_nums = options.chunk.not_nil!.split(/\D+/).map(&.to_i)
+      x = chunk_nums[0].to_i
+      z = chunk_nums[1].to_i
+
+      if root_tag = region.read_chunk(x, z)
+        root_tag
+      else
+        STDERR.puts "Chunk(#{x}, #{z}) is nil"
+        exit(2)
+      end
     else
-      STDERR.puts "Chunk(#{x}, #{z}) is nil"
-      exit(2)
+      STDERR.puts "Chunk is required, see -h"
+      exit(1)
     end
   when ".xml"
     file = File.open(file_path, "r")

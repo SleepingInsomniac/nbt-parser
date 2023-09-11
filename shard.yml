@@ -7,7 +7,15 @@ authors:
 targets:
   nbt:
     main: src/cli.cr
+  nbtmap:
+    main: src/cli_map.cr
 
 crystal: 1.9.2
 
 license: MIT
+
+dependencies:
+  stumpy_png:
+    github: stumpycr/stumpy_png
+  crustache:
+    github: MakeNowJust/crustache

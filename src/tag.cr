@@ -22,7 +22,7 @@ module Nbt
     property name : String
     property payload : Nil | String | Int8 | Int16 | Int32 | Int64 | Float32 | Float64 | Array(Int8) | Array(Int32) | Array(Int64) | Array(Nbt::Tag)
 
-    def initialize(@id, @name, @payload)
+    def initialize(@id, @name, @payload = nil)
     end
 
     def list_id : Id?

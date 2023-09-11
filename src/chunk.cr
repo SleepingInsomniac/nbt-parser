@@ -29,6 +29,7 @@ module Nbt
     @sections = Array(Array(UInt32)?).new(24) { nil }
     @biomes = Array(Array(UInt32)?).new(24) { nil }
     @world_surface : Array(UInt32)?
+    @ocean_floor : Array(UInt32)?
 
     def initialize(@nbt : Tag)
     end
@@ -86,7 +87,7 @@ module Nbt
       @sections[section_index]?
     end
 
-    def world_surface
+    def world_surface : Array(UInt32)?
       return @world_surface if @world_surface
 
       if world_surface_tag = @nbt["Heightmaps", "WORLD_SURFACE"]?
@@ -95,6 +96,20 @@ module Nbt
 
       @world_surface
     end
+
+    def ocean_floor : Array(UInt32)?
+      return @ocean_floor if @ocean_floor
+
+      if tag = @nbt["Heightmaps", "OCEAN_FLOOR"]?
+        @ocean_floor = tag.as(Nbt::Tag).unpack(9)
+      end
+
+      @ocean_floor
+    end
+
+    # def structures
+    #   if tag = @nbt["structures"]?
+    # end
 
     def block(x : Int, y : Int, z : Int)
       if s = section(y // 16)
