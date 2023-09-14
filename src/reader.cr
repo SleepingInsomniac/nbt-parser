@@ -5,10 +5,10 @@ module Nbt
     def initialize(@io)
     end
 
-    def parse_tag
+    def read_tag
       tag_id = parse_id
       name = tag_id.end? ? "" : read_string
-      payload = parse_payload(tag_id)
+      payload = read_payload(tag_id)
 
       Tag.new(tag_id, name, payload)
     end
@@ -17,50 +17,50 @@ module Nbt
       Tag::Id.from_value(io.read_bytes(UInt8))
     end
 
-    def parse_payload(tag_id)
+    def read_payload(tag_id)
       case tag_id
       when Tag::Id::End       then nil
-      when Tag::Id::Byte      then io.read_bytes(Int8)
-      when Tag::Id::Short     then io.read_bytes(Int16, format: IO::ByteFormat::BigEndian)
-      when Tag::Id::Int       then io.read_bytes(Int32, format: IO::ByteFormat::BigEndian)
-      when Tag::Id::Long      then io.read_bytes(Int64, format: IO::ByteFormat::BigEndian)
-      when Tag::Id::Float     then io.read_bytes(Float32, format: IO::ByteFormat::BigEndian)
-      when Tag::Id::Double    then io.read_bytes(Float64, format: IO::ByteFormat::BigEndian)
-      when Tag::Id::ByteArray then Array(Int8).new(array_size) { io.read_bytes(Int8) }
+      when Tag::Id::Byte      then read_number(Int8)
+      when Tag::Id::Short     then read_number(Int16)
+      when Tag::Id::Int       then read_number(Int32)
+      when Tag::Id::Long      then read_number(Int64)
+      when Tag::Id::Float     then read_number(Float32)
+      when Tag::Id::Double    then read_number(Float64)
+      when Tag::Id::ByteArray then Array(Int8).new(read_number(Int32)) { read_number(Int8) }
       when Tag::Id::String    then read_string
-      when Tag::Id::List
-        list_id = parse_id
-        size = io.read_bytes(Int32, format: IO::ByteFormat::BigEndian)
-        tags = Array(Tag).new(size) do
-          payload = parse_payload(list_id)
-          Tag.new(list_id.not_nil!, "", payload)
-        end
-      when Tag::Id::Compound
-        tags = Array(Tag).new
-        loop do
-          tag = parse_tag
-          break if tag.id == Tag::Id::End
-          tags << tag
-        end
-        tags
-      when Tag::Id::IntArray
-        Array(Int32).new(array_size) { io.read_bytes(Int32, format: IO::ByteFormat::BigEndian) }
-      when Tag::Id::LongArray
-        Array(Int64).new(array_size) { io.read_bytes(Int64, format: IO::ByteFormat::BigEndian) }
+      when Tag::Id::List      then read_list
+      when Tag::Id::Compound  then read_compound
+      when Tag::Id::IntArray  then Array(Int32).new(read_number(Int32)) { read_number(Int32) }
+      when Tag::Id::LongArray then Array(Int64).new(read_number(Int32)) { read_number(Int64) }
       else
-        STDERR.puts "Error: Unknown tag id #{tag_id.value}"
-        exit(1)
+        raise "Error: Unknown tag id #{tag_id.value}"
       end
     end
 
-    # For length of array values (not List)
-    def array_size
-      io.read_bytes(Int32, format: IO::ByteFormat::BigEndian)
+    def read_number(t = Int8)
+      io.read_bytes(t, format: IO::ByteFormat::BigEndian)
+    end
+
+    def read_list
+      list_id = parse_id
+      Array(Tag).new(read_number(Int32)) do
+        payload = read_payload(list_id)
+        Tag.new(list_id.not_nil!, "", payload)
+      end
+    end
+
+    def read_compound
+      tags = Array(Tag).new
+      loop do
+        tag = read_tag
+        break if tag.id == Tag::Id::End
+        tags << tag
+      end
+      tags
     end
 
     def read_string
-      size = io.read_bytes(UInt16, format: IO::ByteFormat::BigEndian)
-      buffer = Bytes.new(size)
+      buffer = Bytes.new(read_number(UInt16))
       io.read_fully(buffer)
       String.new(buffer)
     end
