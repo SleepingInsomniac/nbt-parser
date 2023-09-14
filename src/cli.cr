@@ -109,10 +109,10 @@ nbt_data =
     root_tag =
       if uncompress
         Compress::Gzip::Reader.open(file) do |gzip|
-          Nbt::Reader.new(gzip).parse_tag
+          Nbt::Reader.new(gzip).read_tag
         end
       else
-        Nbt::Reader.new(file).parse_tag
+        Nbt::Reader.new(file).read_tag
       end
 
     file.close

@@ -1,5 +1,7 @@
 module Nbt
   class Tag
+    alias TagNumericT = Int8 | Int16 | Int32 | Int64 | Float32 | Float64
+    alias TagArrayT = Array(Int8) | Array(Int32) | Array(Int64) | Array(Tag)
     include Enumerable(Int8 | Int32 | Int64 | Tag)
 
     enum Id : UInt8
@@ -18,9 +20,18 @@ module Nbt
       LongArray = 12
     end
 
+    # *data* is a byte array, in which 1 byte stores 2 values (2 nibbles).
+    # Skylight and Blocklight are 2048 byte arrays that use this format.
+    # ex: `block_light = nibble4(block_light_data, block_index)`
+    def self.nibble4(data : Array(UInt8), index : Int) : UInt8
+      n = data[index // 2]      # 2 values per byte
+      n = n >> 4 if index.even? # little endian (shift by 4 bits)
+      n & 0xF
+    end
+
     getter id : Id
     property name : String
-    property payload : Nil | String | Int8 | Int16 | Int32 | Int64 | Float32 | Float64 | Array(Int8) | Array(Int32) | Array(Int64) | Array(Nbt::Tag)
+    property payload : Nil | String | TagNumericT | TagArrayT
 
     def initialize(@id, @name, @payload = nil)
     end
@@ -37,8 +48,8 @@ module Nbt
 
     # Enumerable implementation
     def each
-      if @payload.is_a?(Array(Int8) | Array(Int32) | Array(Int64) | Array(Nbt::Tag))
-        @payload.as(Array(Int8) | Array(Int32) | Array(Int64) | Array(Nbt::Tag)).each do |item|
+      if @payload.is_a?(TagArrayT)
+        @payload.as(TagArrayT).each do |item|
           yield item
         end
       end
@@ -61,7 +72,7 @@ module Nbt
         current_tag =
           case path
           when Int
-            current_tag.payload.as(Array(Int8) | Array(Int32) | Array(Int64) | Array(Nbt::Tag))[path]?
+            current_tag.payload.as(TagArrayT)[path]?
           when String
             unless current_tag.payload.is_a?(Array(Nbt::Tag))
               nil
@@ -74,16 +85,20 @@ module Nbt
       current_tag
     end
 
+    def [](*path : Int | String)
+      self[*path]?.not_nil!
+    end
+
     # Unpack data in a long array that is packed by bits_per_entry
     def unpack(bits_per_entry : Int) : Array(UInt32)
       raise "Can only unpack LongArray" unless @id.long_array?
-
-      unpacked = [] of UInt32
-      return unpacked if @payload.nil?
+      return [] of UInt32 if @payload.nil?
 
       packed = @payload.as(Array(Int64))
       bitmask = (1_i64 << bits_per_entry) - 1_i64
       entries_per_packed = 64 // bits_per_entry
+
+      unpacked = Array(UInt32).new(packed.size * entries_per_packed)
 
       packed.each do |data|
         shifted_data = data

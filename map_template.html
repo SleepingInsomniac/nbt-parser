@@ -14,6 +14,7 @@
         font-family: helvetica, sans-serif;
         color: white;
         text-shadow: 1px 1px 1px #000;
+        font-size: 12pt;
       }
 
       body {
@@ -31,6 +32,8 @@
         grid-template-columns: 512px;
         grid-template-rows: 512px;
         gap: 0;
+        width: 0px;
+        height: 0px;
       }
 
       .image {
@@ -43,18 +46,27 @@
       }
 
       .info {
-        opacity: 0;
         padding: 12pt;
       }
 
       .location {
         font-weight: normal;
-        font-size: 12pt;
         margin-bottom: 10px;
+        opacity: 0;
+      }
+
+      .info:hover .location {
+        opacity: 1;
       }
 
       .biomes {
-        opacity: 0.5;
+        opacity: 0;
+        transition: 0.3s linear;
+        font-size: 8pt;
+      }
+
+      .info:hover .biomes {
+        opacity: 1;
       }
 
       .border {
@@ -72,6 +84,45 @@
       .image:hover .border {
         opacity: 0.5;
       }
+
+      .structures {
+        display: block;
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+      }
+
+      .structures li {
+        position: absolute;
+        border: 1px solid red;
+        width: 16px;
+        height: 16px;
+        z-index: 99;
+        opacity: 0;
+        transition: 0.3s linear;
+      }
+
+      .info:hover .structures li {
+        opacity: 0.6;
+      }
+
+      .info:hover .structures li:hover {
+        opacity: 1;
+      }
+
+      .info:hover .structures li:hover .structure-label {
+        opacity: 1;
+        z-index: 999;
+      }
+
+      .structure-label {
+        position: absolute;
+        left: 18px;
+        opacity: 0;
+        transition: 0.3s linear;
+      }
     </style>
   </head>
   <body>
@@ -86,6 +137,13 @@
             <li>{{.}}</li>
             {{/biomes}}
           </ul>
+          <ul class="structures">
+            {{#structures}}
+            <li style="left: {{rel_x}}%; top: {{rel_z}}%;" data-x="{{x}}" data-z="{{z}}">
+              <span class="structure-label">{{name}}</span>
+            </li>
+            {{/structures}}
+          </ul>
         </div>
       </div>
       {{/regions}}
@@ -95,6 +153,8 @@
       const imagesContainer = document.querySelector('#images');
       const images = Array.from(imagesContainer.querySelectorAll('div'));
 
+      const originRegion = document.querySelector('[data-x="0"][data-z="0"]');
+
       let xs = images.map(img => +img.getAttribute('data-x'));
       let zs = images.map(img => +img.getAttribute('data-z'));
 
@@ -102,6 +162,9 @@
       let minZ = Math.min(...zs);
       let maxX = Math.max(...xs);
       let maxZ = Math.max(...zs);
+
+      // imagesContainer.style.width = (maxX - minX + 1) * 512 + "px";
+      // imagesContainer.style.height = (maxZ - minZ + 1) * 512 + "px";
 
       images.forEach(img => {
         const x = img.getAttribute('data-x') - minX + 1;

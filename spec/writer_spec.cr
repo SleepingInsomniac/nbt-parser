@@ -11,7 +11,7 @@ describe Nbt::Writer do
     Nbt::Writer.write(io, tag)
 
     io.rewind
-    new_tag = Nbt::Reader.new(io).parse_tag
+    new_tag = Nbt::Reader.new(io).read_tag
 
     new_tag.id.should eq(tag.id)
     new_tag.name.should eq(tag.name)
@@ -27,7 +27,7 @@ describe Nbt::Writer do
     Nbt::Writer.write(io, tag)
 
     io.rewind
-    new_tag = Nbt::Reader.new(io).parse_tag
+    new_tag = Nbt::Reader.new(io).read_tag
 
     new_tag.id.should eq(tag.id)
     new_tag.name.should eq(tag.name)
@@ -44,7 +44,7 @@ describe Nbt::Writer do
     Nbt::Writer.write(io, tag)
 
     io.rewind
-    new_tag = Nbt::Reader.new(io).parse_tag
+    new_tag = Nbt::Reader.new(io).read_tag
 
     new_tag.id.should eq(tag.id)
     new_tag.name.should eq(tag.name)

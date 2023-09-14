@@ -101,14 +101,14 @@ module Nbt
         case compression_type
         when 1 # GZip (RFC1952) (unused in practice)
           Compress::Gzip::Reader.open(memory) do |gzip|
-            Reader.new(gzip).parse_tag
+            Reader.new(gzip).read_tag
           end
         when 2 # Zlib (RFC1950)
           Compress::Zlib::Reader.open(memory) do |zlib|
-            Reader.new(zlib).parse_tag
+            Reader.new(zlib).read_tag
           end
         when 3 # Uncompressed (unused in practice)
-          Reader.new(memory).parse_tag
+          Reader.new(memory).read_tag
         else
           raise "Unknown compression type for chunk"
         end
