@@ -1,3 +1,4 @@
+require "yaml"
 require "./color"
 
 class MapColors
@@ -9,15 +10,15 @@ class MapColors
   def initialize(@file_path)
     raise "#{file_path} does not exist!" unless File.exists?(@file_path)
 
-    JSON.parse(File.read(@file_path)).as_h.each do |key, value|
+    YAML.parse(File.read(@file_path)).as_h.each do |key, value|
       if v = value.as_s?
         begin
-          @colors[key] = Color(UInt8).from_hex(v)
+          @colors[key.as_s] = Color(UInt8).from_hex(v)
         rescue e
           STDERR.puts "error: #{key} => #{e}"
         end
       else
-        @colors[key] = nil
+        @colors[key.as_s] = nil
       end
     end
   end
